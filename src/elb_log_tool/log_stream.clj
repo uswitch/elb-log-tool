@@ -3,12 +3,10 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [schema.core :as s]
-            [schema.coerce :as sc]
-            [clj-time.coerce :as time.coerce]
             [amazonica.aws.identitymanagement :as iam]
             [amazonica.aws.elasticloadbalancing :as elb]
             [amazonica.aws.s3 :as s3]
-            [amazonica.aws.ec2 :as ec2])
+            [elb-log-tool.schema :as schema])
   (:import [org.joda.time DateTime]))
 
 (defn- elb-log-bucket
@@ -53,39 +51,6 @@
                                  :response-processing-time-seconds :elb-status-code :backend-status-code :received-bytes :sent-bytes :request :user-agent
                                  :ssl-cipher :ssl-protocol])
 
-(def ^:private date-and-string-coercions (merge {DateTime (fn [x] (time.coerce/from-string x))}
-                                                sc/+string-coercions+))
-
-(def region-schema {:endpoint (apply s/enum (->> (ec2/describe-regions) :regions (map :region-name)))})
-
-(def log-query-schema {:load-balancer-name s/Str
-                       (s/optional-key :year) s/Int
-                       (s/optional-key :month) s/Int
-                       (s/optional-key :day) s/Int})
-
-(def log-entry-schema
-  {:timestamp                        DateTime
-   :elb-name                         s/Str
-   :client-ip                        s/Str
-   :client-port                      s/Int
-   :backend-ip                       s/Str
-   :backend-port                     s/Int
-   :request-processing-time-seconds  s/Num
-   :backend-processing-time-seconds  s/Num
-   :response-processing-time-seconds s/Num
-   :elb-status-code                  s/Int
-   :backend-status-code              s/Int
-   :received-bytes                   s/Int
-   :sent-bytes                       s/Int
-   :request-method                   s/Str
-   :request-url                      s/Str
-   :request-protocol                 s/Str
-   :user-agent                       s/Str
-   :ssl-cipher                       s/Str
-   :ssl-protocol                     s/Str})
-
-(def ^:private log-entry-coercer (sc/coercer log-entry-schema date-and-string-coercions))
-
 (defn- csv-line->log-entry
   [csv-line-vec]
   (let [m (zipmap raw-log-headings csv-line-vec)
@@ -101,7 +66,7 @@
                :request-url      request-url
                :request-protocol request-protocol)
         (dissoc :request)
-        log-entry-coercer)))
+        schema/log-entry-coercer)))
 
 (defn- log-entries
   [log-file]
@@ -121,11 +86,11 @@
        flatten
        (sort-by :timestamp)))
 
-(s/defn log-seq :- log-entry-schema
+(s/defn log-seq :- schema/log-entry-schema
   "Read the logs of an elastic load balancer from S3, with the logs in time order.
    Where there are log entries from multiple availability zones in the region, open
    the log files for that time index as a group and return their logs in time sequence."
-  [region :- region-schema {:keys [load-balancer-name] :as log-query} :- log-query-schema]
+  [region :- schema/region-schema {:keys [load-balancer-name] :as log-query} :- schema/log-query-schema]
   (when-let [files (elb-log-files region log-query)]
     (let [ts-index            (+ (-> files first :key (.indexOf load-balancer-name)) (count load-balancer-name) 1)
           ts-end              (+ ts-index 14)
