@@ -53,9 +53,9 @@
 
 (defn- csv-line->log-entry
   [csv-line-vec]
-  (let [m (zipmap raw-log-headings csv-line-vec)
-        [client-ip client-port] (clojure.string/split (:client-port m) #":")
-        [backend-ip backend-port] (clojure.string/split (:backend-port m) #":")
+  (let [m                           (zipmap raw-log-headings csv-line-vec)
+        [client-ip client-port]     (clojure.string/split (:client-port m) #":")
+        [backend-ip backend-port]   (clojure.string/split (:backend-port m) #":")
         [request-method request-url request-protocol] (clojure.string/split (:request m) #" ")]
     (-> m
         (assoc :client-ip        client-ip
@@ -87,9 +87,14 @@
        (sort-by :timestamp)))
 
 (s/defn log-seq :- schema/log-entry-schema
-  "Read the logs of an elastic load balancer from S3, with the logs in time order.
+  "Read the logs of an elastic load balancer from S3, with the log entriess in time order.
    Where there are log entries from multiple availability zones in the region, open
-   the log files for that time index as a group and return their logs in time sequence."
+   the log files for that time index as a group and return their entries in time order.
+
+   The log-query param has optional year, month and day restrictions.  If only the load
+   balancer name is specified, all the logs present in S3 will be returned.  Specifying
+   the load balancer name and a year in the log-query returns all the logs for that year.
+   Specifying a month without a year will be ignored as will specifying a day without a month."
   [region :- schema/region-schema {:keys [load-balancer-name] :as log-query} :- schema/log-query-schema]
   (when-let [files (elb-log-files region log-query)]
     (let [ts-index            (+ (-> files first :key (.indexOf load-balancer-name)) (count load-balancer-name) 1)
@@ -101,12 +106,13 @@
            flatten))))
 
 (comment
-  (let [region       {:endpoint "eu-west-1"}
-        log-query    {:load-balancer-name "mobilesdealsapi-v2" :year 2016 :month 4 :day 20}]
-    ; (elb-log-bucket region log-query)
-    ; (def test-files (elb-log-files region log-query))
-    (def test-log-entries (log-seq region log-query))
-    )
+  (s/with-fn-validation
+    (let [region       {:endpoint "eu-west-1"}
+          log-query    {:load-balancer-name "mobilesdealsapi-v2" :year 2016 :month 4 :day 20}]
+      ; (elb-log-bucket region log-query)
+      ; (def test-files (elb-log-files region log-query))
+      (def test-log-entries (log-seq region log-query))
+      ))
 
   (->> test-log-entries
        (drop 1000)
