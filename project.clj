@@ -7,6 +7,7 @@
                  [org.clojure/java.jdbc "0.6.1"]
                  [clj-time "0.11.0"]
                  [prismatic/schema "1.1.1"]
+                 [camel-snake-kebab "0.4.0"]
                  [org.postgresql/postgresql "9.4.1208"]
 
                  ;; logging
