@@ -86,7 +86,7 @@
        flatten
        (sort-by :timestamp)))
 
-(s/defn log-seq :- schema/log-entry-schema
+(s/defn log-seq :- schema/log-entry
   "Read the logs of an elastic load balancer from S3, with the log entriess in time order.
    Where there are log entries from multiple availability zones in the region, open
    the log files for that time index as a group and return their entries in time order.
@@ -95,7 +95,7 @@
    balancer name is specified, all the logs present in S3 will be returned.  Specifying
    the load balancer name and a year in the log-query returns all the logs for that year.
    Specifying a month without a year will be ignored as will specifying a day without a month."
-  [region :- schema/region-schema {:keys [load-balancer-name] :as log-query} :- schema/log-query-schema]
+  [region :- schema/region {:keys [load-balancer-name] :as log-query} :- schema/log-query]
   (when-let [files (elb-log-files region log-query)]
     (let [ts-index            (+ (-> files first :key (.indexOf load-balancer-name)) (count load-balancer-name) 1)
           ts-end              (+ ts-index 14)

@@ -1,6 +1,5 @@
 (ns elb-log-tool.schema
-  (:require 
-            [schema.core :as s]
+  (:require [schema.core :as s]
             [schema.coerce :as sc]
             [clj-time.coerce :as time.coerce]
             [amazonica.aws.ec2 :as ec2])
@@ -9,14 +8,14 @@
 (def ^:private date-and-string-coercions (merge {DateTime (fn [x] (time.coerce/from-string x))}
                                                 sc/+string-coercions+))
 
-(def region-schema {:endpoint (apply s/enum (->> (ec2/describe-regions) :regions (map :region-name)))})
+(def region {:endpoint (apply s/enum (->> (ec2/describe-regions) :regions (map :region-name)))})
 
-(def log-query-schema {:load-balancer-name s/Str
-                       (s/optional-key :year) s/Int
-                       (s/optional-key :month) s/Int
-                       (s/optional-key :day) s/Int})
+(def log-query {:load-balancer-name s/Str
+                (s/optional-key :year) s/Int
+                (s/optional-key :month) s/Int
+                (s/optional-key :day) s/Int})
 
-(def log-entry-schema
+(def log-entry
   {:timestamp                        DateTime
    :elb-name                         s/Str
    :client-ip                        s/Str
@@ -37,6 +36,6 @@
    :ssl-cipher                       s/Str
    :ssl-protocol                     s/Str})
 
-(def log-entry-coercer (sc/coercer log-entry-schema date-and-string-coercions))
+(def log-entry-coercer (sc/coercer log-entry date-and-string-coercions))
 
 
