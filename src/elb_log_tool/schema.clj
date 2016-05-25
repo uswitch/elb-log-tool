@@ -38,4 +38,7 @@
 
 (def log-entry-coercer (sc/coercer log-entry date-and-string-coercions))
 
-
+(def replay-run-state
+  {:request-channel  clojure.core.async.impl.channels.ManyToManyChannel
+   :response-channel clojure.core.async.impl.channels.ManyToManyChannel
+   :sleep-delay      (s/maybe s/Int)})
