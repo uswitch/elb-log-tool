@@ -24,11 +24,7 @@
 (def ^:private key-list (keys table-spec))
 (def ^:private get-row-values-in-key-order (apply juxt key-list))
 
-(defn user-name
-  []
-  (-> (System/getProperty "user.name")
-      (clojure.string/lower-case)
-      (clojure.string/replace #"\W" "-")))
+
 
 (defn- clojure-keyword->postgres-entity
   [entity]
@@ -49,17 +45,6 @@
     (let [rows (map get-row-values-in-key-order batch)]
       (sql/insert-multi! db :elb-logs key-list rows {:entities clojure-keyword->postgres-entity}))))
 
-(comment
-  (def local-db {:classname   "org.postgresql.Driver"
-                 :subprotocol "postgresql"
-                 :subname     (str "//127.0.0.1/" (user-name))})
 
-  (create-table local-db)
-  
-  (require '[elb-log-tool.log-stream :as log-stream])
-  (s/with-fn-validation
-    (->> (log-stream/log-seq {:endpoint "eu-west-1"} {:load-balancer-name "mobilesdealsapi-v2" :year 2016 :month 4 :day 21})
-         (filter :timestamp)  ;; ignore rows without a timestamp
-         (write-to-table local-db "mobilesdealsapi-v2"))))
 
 
