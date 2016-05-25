@@ -86,7 +86,7 @@
        flatten
        (sort-by :timestamp)))
 
-(s/defn log-seq :- schema/log-entry
+(s/defn log-seq :- [schema/log-entry]
   "Read the logs of an elastic load balancer from S3, with the log entriess in time order.
    Where there are log entries from multiple availability zones in the region, open
    the log files for that time index as a group and return their entries in time order.
