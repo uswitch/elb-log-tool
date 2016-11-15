@@ -39,7 +39,7 @@
        (sql/db-do-commands db)))
 
 (defn write-to-table
-  [db elb-name log-seq]
+  [db log-seq]
   (doseq [batch (partition-all 10000 log-seq)]
     (log/debugf "Inserting a batch of %d rows." (count batch))
     (let [rows (map get-row-values-in-key-order batch)]

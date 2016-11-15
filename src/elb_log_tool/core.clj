@@ -63,8 +63,8 @@
   
   ; wrap with (s/with-fn-validation) if you want the training wheels on.  Best have lots of RAM since
   ; the log-seq must be fully evaluated in order to pass the schema check.
-  (->> (log-stream/log-seq {:endpoint "eu-west-1"} {:load-balancer-name "mobilesdealsapi-v2" :year 2016 :month 4 :day 21})
+  (->> (log-stream/log-seq {:endpoint "eu-west-1"} {:load-balancer-name "mobilesdealsapi-20160617" :year 2016 :month 11 :day 15})
        (filter :timestamp)  ;; ignore rows without a timestamp
-       (db-writer/write-to-table local-db "mobilesdealsapi-v2")))
+       (db-writer/write-to-table local-db)))
 
 
